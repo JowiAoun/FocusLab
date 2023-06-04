@@ -4,8 +4,9 @@ const ai = require("./summariser.js")
 const util = require("./util/util.js")
 require("dotenv").config()
 const app = express();
-
+const pdf2img = require('pdf-img-convert');
 const fs = require("fs");
+const { PythonShell } = require("python-shell")
 
 /* Template JSON request
 Request that needs authentication:
@@ -103,9 +104,32 @@ app.get('/profile', (req, res) => {
 app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
     console.log(req.body.file)
-    fs.writeFileSync(`../uploads/pdf${req.get("authorization")}${Date.now()}`, Buffer.from(req.body.file.data))
+    pdf2img.convert(Buffer.from(req.body.file.data)).then((imgarr) => {
+        //imgarr is an array of png images in UInt8Arr format
+        for(img of imgarr){
+            var path = `../uploads/${req.get("authorization")}${Math.floor(Math.random * 100000)}.png`;
+            fs.writeFileSync(path, new Buffer(imgarr[0].buffer))
+            var pyshellOptions = {
+                pythonPath: "python3",
+                scriptPath: "./",
+                args: [`"../uploads/${path}"`]
+            }
+            PythonShell.run("ocr.py", pyshellOptions, (err, result) => {
+                if(err) {
+                    console.error(err)
+                } else {
+                    var output = result[0]
+                    console.log(output)
+                }
+            })
+        }
 
-    //TODO: 1. send data to ocr.py via child_process 2. relay data to summariser.js
+        
+
+    })
+    
+
+    
     res.send({message: "Success!"})
     //Part 2: Summariser, assuming above ocr.py is done
     var output = "";
@@ -117,4 +141,4 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
 })
 
-app.listen(process.env.PORT || 80);
+app.listen(process.env.PORT || 8000);
