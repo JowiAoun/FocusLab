@@ -24,8 +24,8 @@ Body:
 }
 */
 //nonAuthPaths are for endpoints that do not require authentication. Put your endpoint here if needed
-const nonAuthPaths = ["/", "/profile"]
-app.use(express.json())
+const nonAuthPaths = ["/", "/profile", "/playground.html"]
+
 app.use(function(req, res, next) {
     
     //REMOVE ALL RES.HEADER before pushing to prod!
@@ -36,27 +36,41 @@ app.use(function(req, res, next) {
     if(!nonAuthPaths.includes(req.originalUrl)){
         //Get TOTP from header
         
-        var reqToken = req.get("authorization").substring(7)
-        //Get current timestamp
-        var currentTime = Date.now()
-        //Dividing by 30 because each TOTP is valid for 30sec
-        //Generate another token timestamp in case the previous token was in the previous block of time
-        //(so technically each TOTP is valid for 60sec but shouldnt affect security much)
-        var tokenTimestamps = [currentTime / 30, currentTime / 30 - 1];
-        //TODO: grab user session token from MongoDB
-        var userSessionToken = "hehehehaw"; 
-        //if any of the generated tokens match the generated TOTP
-        for(var x of tokenTimestamps){
-            //console.log("generated" + util.generateTOTP(userSessionToken, x))
-            //console.log(reqToken)
-            if(reqToken==util.generateTOTP(userSessionToken, x)){
-                
-                next()
-                
-                return false;
+        var reqToken = req.get("authorization")
+        console.log(reqToken)
+        if(reqToken != undefined){
+            reqToken = reqToken.substring(7)
+             //Get current timestamp
+            var currentTime = Date.now()
+            //Dividing by 30 because each TOTP is valid for 30sec
+            //Generate another token timestamp in case the previous token was in the previous block of time
+            //(so technically each TOTP is valid for 60sec but shouldnt affect security much)
+            var tokenTimestamps = [currentTime / 30000, currentTime / 30000 - 1];
+            //TODO: grab user session token from MongoDB
+            var userSessionToken = "hehehehaw"; 
+            //if any of the generated tokens match the generated TOTP
+            for(var x of tokenTimestamps){
+                //console.log("generated" + util.generateTOTP(userSessionToken, x))
+                //console.log(reqToken)
+                if(reqToken==util.generateTOTP(userSessionToken, x)){
+                    
+                    next()
+                    
+                    return false;
+                }
             }
+            
+            for(var x of tokenTimestamps){
+                //console.log("generated" + util.generateTOTP(userSessionToken, x))
+                //console.log(reqToken)
+                console.log(util.generateTOTP(userSessionToken, x))
+                    
+            }
+            res.status(401).send({message: "Invalid Token"})
+        } else {
+            res.status(404).send()
         }
-        res.status(401).send({message: "Invalid Token"})
+       
 
         
     } else {
@@ -67,12 +81,40 @@ app.use(function(req, res, next) {
 app.get('/', (req, res) => {
     res.send("Hello World!")
 })
-
+app.get('/playground.html', (req, res) => {
+    res.send(`<!DOCTYPE html>
+    <html lang="en" ng-app="APP">
+    <head>
+        <meta charset="UTF-8">
+        <title>angular file upload</title>
+    </head>
+    
+    <body>
+            <form method='post' action='/api/summarise' enctype="multipart/form-data">
+            <input type='file' name='fileUploaded'>
+            <input type='submit'>
+     </body>
+    </html>`)
+})
 app.get('/profile', (req, res) => {
     res.send("Profile page!")
 })
-app.get('/api/summarise', upload.any(), (req, res) => {
-    //console.log(req.files)
+app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
+       /* var fstream;
+        req.pipe(req.busboy);
+        req.busboy.on('file', function (fieldname, file, filename) {
+            console.log("Uploading: " + filename);
+
+            //Path where image will be uploaded
+            fstream = fs.createWriteStream("../uploads/" + filename);
+            file.pipe(fstream);
+            fstream.on('close', function () {    
+            console.log("Upload Finished of " + filename);              
+             
+            });
+        });*/
+    console.log(req.body)
+
     //TODO: 1. send data to ocr.py via child_process 2. relay data to summariser.js
     res.send({message: "Success!"})
     //Part 2: Summariser, assuming above ocr.py is done
