@@ -1,8 +1,9 @@
 window.onload = function () {
+  setTimeout(() => {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   let interval = null;
-
+  
   document.querySelector('h2').onmouseover = (event) => {
     let iteration = 0;
 
@@ -30,8 +31,8 @@ window.onload = function () {
 
   // poly
 
-  const paper = document.querySelector('canvas'),
-    pen = paper.getContext('2d');
+  const paper = document.querySelector('canvas');
+  var pen = paper.getContext('2d');
 
   const get = (selector) => document.querySelector(selector);
 
@@ -247,5 +248,5 @@ window.onload = function () {
 
   init();
 
-  draw();
+  draw();}, 100)
 };

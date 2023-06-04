@@ -4,7 +4,9 @@ const ai = require("./summariser.js")
 const util = require("./util/util.js")
 require("dotenv").config()
 const app = express();
-const multer  = require('multer')
+const multer  = require('multer');
+const fs = require("fs");
+const { Poppler } = require("node-poppler");
 const upload = multer({ dest: '../uploads/' })
 /* Template JSON request
 Request that needs authentication:
@@ -100,20 +102,9 @@ app.get('/profile', (req, res) => {
     res.send("Profile page!")
 })
 app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
-       /* var fstream;
-        req.pipe(req.busboy);
-        req.busboy.on('file', function (fieldname, file, filename) {
-            console.log("Uploading: " + filename);
-
-            //Path where image will be uploaded
-            fstream = fs.createWriteStream("../uploads/" + filename);
-            file.pipe(fstream);
-            fstream.on('close', function () {    
-            console.log("Upload Finished of " + filename);              
-             
-            });
-        });*/
-    console.log(req.body)
+    
+    console.log(req.body.file)
+    fs.writeFileSync(`../uploads/pdf${req.get("authorization")}${Date.now()}`, Buffer.from(req.body.file.data))
 
     //TODO: 1. send data to ocr.py via child_process 2. relay data to summariser.js
     res.send({message: "Success!"})
