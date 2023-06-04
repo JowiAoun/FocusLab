@@ -1,0 +1,102 @@
+.timer {
+  background-color: var(--color-note);
+  border-radius: 4px;
+  padding: 15px;
+  margin-right: 1.2987012987012987vh;
+  margin-bottom: 1.2987012987012987vh;
+  position: absolute;
+  border: var(--color-secondary) 1px solid;
+  resize: both;
+  min-width: 16.233766233766232vh;
+  min-height: 16.233766233766232vh;
+  max-height: fit-content;
+  max-width: fit-content;
+  box-shadow: none;
+  transition: ease-in-out 0.2s;
+  overflow: visible;
+}
+
+.timer:hover .handle,
+.timer:hover .delete-btn {
+  opacity: 1;
+}
+
+.pomodoro-container {
+  text-align: center;
+}
+
+.timer {
+  margin: 0px auto;
+  width: 200px;
+  border-radius: 10px;
+  background-color: #f2f2f2;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.session-type {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.time {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.session-count {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.controls {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: row;
+}
+.controls button {
+  font-size: 16px;
+  padding: 8px 16px;
+  margin-right: 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.start-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.pause-button {
+  background-color: #fdd835;
+  color: white;
+}
+
+.reset-button {
+  background-color: #f44336;
+  color: white;
+}
+.settings {
+  margin-top: 20px;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.setting label {
+  flex-basis: 150px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.setting input {
+  width: 60%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
