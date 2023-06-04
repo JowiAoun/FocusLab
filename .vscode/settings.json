@@ -1,0 +1,4 @@
+{
+  "appService.defaultWebAppToDeploy": "/subscriptions/97947818-acdb-47f7-9ddf-5413eb1fa534/resourceGroups/HackLah/providers/Microsoft.Web/sites/FocusLab",
+  "appService.deploySubpath": "."
+}
