@@ -32,10 +32,13 @@ def chars_counter(path):
 
 
 
-json_data, text_detected = chars_counter("notes image.jpeg") 
+
+
+path = input('File Path: ')
+json_data, text_detected = chars_counter(path) 
 
 print("OCR text:" + text_detected)
-print(json_data)
+
 
 
 #Credits for the tutorial: https://www.youtube.com/watch?v=fswR5cbmq-c

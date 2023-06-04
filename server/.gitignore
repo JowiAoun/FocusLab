@@ -2,3 +2,5 @@ node_modules
 .env
 playground.js
 playground2.js
+playground.html
+.DS_Store

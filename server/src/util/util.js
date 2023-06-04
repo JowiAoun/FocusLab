@@ -1,7 +1,8 @@
+const { createHash } = require('node:crypto');
 function generateTOTP(sessionToken, timestamp){
-    var hash = createHash("SHA-256")
-    hash.update(`${sessionToken}xx${timestamp}`)
-    return hash.digest("utf-8")
+    var hash = createHash("sha256")
+    hash.update(`${sessionToken}xx${Math.floor(timestamp)}`)
+    return hash.digest("hex")
 }
 module.exports = {
     generateTOTP: generateTOTP,
