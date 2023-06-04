@@ -4,10 +4,9 @@ const ai = require("./summariser.js")
 const util = require("./util/util.js")
 require("dotenv").config()
 const app = express();
-const multer  = require('multer');
+
 const fs = require("fs");
-const { Poppler } = require("node-poppler");
-const upload = multer({ dest: '../uploads/' })
+
 /* Template JSON request
 Request that needs authentication:
 Headers:
@@ -118,4 +117,4 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
 })
 
-app.listen(8000);
+app.listen(process.env.PORT || 80);
