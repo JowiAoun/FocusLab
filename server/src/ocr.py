@@ -7,9 +7,9 @@ import sys
 def chars_counter(path):
     img = cv2.imread(path)
     #OCR - 1MB limit
-
+    print(path)
     #Posting a request to API
-    url_api = "https://api.ocr.space/parse/"
+    url_api = "https://api.ocr.space/parse/image"
     _, compressedimage = cv2.imencode(".png", img, [1, 90])
     file_bytes = io.BytesIO(compressedimage)
 
@@ -35,7 +35,6 @@ def chars_counter(path):
 
 
 path = sys.argv[1]
-
 json_data, text_detected = chars_counter(path) 
 
 print("OCR text:" + text_detected)
