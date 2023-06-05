@@ -7,7 +7,9 @@ const app = express();
 const pdf2img = require('pdf-img-convert');
 const fs = require("fs");
 const { PythonShell } = require("python-shell")
-
+const PDFDocument = require('pdf-lib').PDFDocument;
+const { ocrSpace } = require("ocr-space-api-wrapper")
+const { exec } = require('node:child_process');
 /* Template JSON request
 Request that needs authentication:
 Headers:
@@ -103,42 +105,172 @@ app.get('/profile', (req, res) => {
 })
 app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
-    console.log(req.body.file)
-    pdf2img.convert(Buffer.from(req.body.file.data)).then((imgarr) => {
+   //fs.writeFileSync("../uploads/test.pdf", Buffer.from(req.body.file.data))
+    /*pdf2img.convert(Buffer.from(req.body.file.data)).then((imgarr) => {
         //imgarr is an array of png images in UInt8Arr format
         for(img of imgarr){
-            var path = `../uploads/${req.get("authorization")}${Math.floor(Math.random * 100000)}.png`;
-            fs.writeFileSync(path, new Buffer(imgarr[0].buffer))
-            var pyshellOptions = {
-                pythonPath: "python3",
-                scriptPath: "./",
-                args: [`"../uploads/${path}"`]
-            }
-            PythonShell.run("ocr.py", pyshellOptions, (err, result) => {
-                if(err) {
-                    console.error(err)
-                } else {
-                    var output = result[0]
-                    console.log(output)
+            var path = `../uploads/${req.get("authorization")}${Math.floor(Math.random() * 100000)}.png`;
+            fs.writeFile(path, img, () => {
+                var pyshellOptions = {
+                    pythonPath: "python3",
+                    scriptPath: "./",
+                    args: [`"${path}"`]
                 }
+                setTimeout(() => {
+                   
+                    var shell = new PythonShell("ocr.py", pyshellOptions)
+                    
+                    shell.run("ocr.py", pyshellOptions, (err, result) => {
+                        if(err) {
+                            console.error(err)
+                        } else {
+                            var output = result[0]
+                            console.log(output)
+                        }
+                    })
+                    shell.on('message', function (message) {
+                        // received a message sent from the Python script (a simple "print" statement)
+                        console.log(message);
+                      });
+                    
+                }, 300)
             })
+            
         }
 
         
 
-    })
-    
-
-    
-    res.send({message: "Success!"})
-    //Part 2: Summariser, assuming above ocr.py is done
-    var output = "";
-    
-    /*ai.summarise(output, 50, process.env.CHATGPT_TOKEN)
-    .then((summary) => {
-        res.send({summary: summary})
     })*/
+    splitPdf(Buffer.from(req.body.file.data), req).then((dataArr) => {
+        var rand = dataArr[1]
+        var pathArr = dataArr[0]
+        var output = "";
+        console.log("here")
+        function recurse(x){
+            return new Promise((resolve, reject)=> {
+                
+                if(x < pathArr.length){
+                    
+                    var newPath = pathArr[x].substring(0, pathArr[x].length - 6) + "c" + pathArr[x].substring(pathArr[x].length - 6)
+                    exec(`./shrink.sh -o "${newPath}" -r 90 "${pathArr[x]}"`, (error, stdout, stderr) => {
+                        if (error) {
+                          console.error(`exec error: ${error}`);
+                          return;
+                        } else {
+                            ocrSpace(newPath, {apiKey: "31df78a8b388957"}).then((result) => {
+                                console.log(result)
+                                output += result.ParsedResults[0].ParsedText;
+                                recurse(x+1).then(p => resolve(p))
+                            })
+                            .catch(e => reject(e))
+                        }
+                        console.log(`stdout: ${stdout}`);
+                        console.error(`stderr: ${stderr}`);
+                      });
+                    
+                } else {
+                    resolve(output)
+                }
+            })
+            
+            
+        }
+        recurse(0).then((output) => {
+            fs.rmdirSync(`../uploads/${req.get("authorization")}${rand}/`, {recursive: true})
+            console.log(output)
+            ai.summary(output, req.body.wordCount, process.env.CHATGPT_KEY)
+                    .then((summary) => {
+                        console.log(summary)
+                        res.send({summary: summary})
+                    })
+                    .catch((e) => console.log(e))
+                
+        })
+        .catch(e => console.log(e))
+        
+    })
+
+
+   /* var path = `../uploads/${req.get("authorization")}${Math.floor(Math.random() * 100000)}.pdf`;
+    var newPath = `../uploads/${req.get("authorization")}${Math.floor(Math.random() * 100000)}c.pdf`;
+    fs.writeFile(path, Buffer.from(req.body.file.data), () => {
+        console.log("Written")
+    
+        exec(`./shrink.sh -o "${newPath}" -r 90 "${path}"`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            } else {
+                ocrSpace(newPath, {apiKey: "31df78a8b388957"}).then((result) => {
+                console.log(result)
+                    ai.summarise(output, req.body.wordCount, process.env.CHATGPT_TOKEN)
+                    .then((summary) => {
+                        res.send({summary: summary})
+                    })
+                })
+                .catch(e => console.log(e))
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+        });
+    })*/
+    //res.send({message: "Success!"})
+    //Part 2: Summariser, assuming above ocr.py is done
+    
+    
     
 })
 
+async function splitPdf(documentAsBytes, req) {
+
+
+    // Load your PDFDocument
+    var pdfDoc = await PDFDocument.load(documentAsBytes)
+
+    var numberOfPages = pdfDoc.getPages().length;
+    var x = 0;
+    var pathArr = [];
+    console.log(numberOfPages)
+    var rand = Math.floor(Math.random() * 100000)
+    fs.mkdirSync(`../uploads/${req.get("authorization")}${rand}/`)
+    while (x < numberOfPages) {
+        if(x % 3 == 0){ 
+            console.log("here")   
+            // Create a new "sub" document
+            const subDocument = await PDFDocument.create();
+            // copy the page at current index
+            var copiedPage = await subDocument.copyPages(pdfDoc, [x])
+            subDocument.addPage(copiedPage[0]);
+            if(x != numberOfPages - 1){
+                
+                var copiedPage1 = await subDocument.copyPages(pdfDoc, [x+1])
+                subDocument.addPage(copiedPage1[0]);
+                if(x != numberOfPages - 2){
+                    copiedPage2 = await subDocument.copyPages(pdfDoc, [x+2])
+                    subDocument.addPage(copiedPage2[0]);
+                    
+                }
+            }
+            
+            
+            const pdfBytes = await subDocument.save()
+            
+            var path = `../uploads/${req.get("authorization")}${rand}/${req.get("authorization")}${Math.floor(Math.random() * 100000)}[${x}.pdf`;
+           
+            fs.writeFileSync(path, pdfBytes);
+            
+            pathArr.push(path)
+            x++;
+        } else {
+            x++;
+            continue
+        }
+       
+        
+    }
+    return [pathArr, rand];
+}
+   
+
+//todo change default port back to 80
 app.listen(process.env.PORT || 8000);
