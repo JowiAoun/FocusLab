@@ -1,12 +1,18 @@
-const express = require("express");
-const { createHash } = require('node:crypto');
+const express = require("express")
+const { createHash } = require('node:crypto')
 const ai = require("./summariser.js")
 const util = require("./util/util.js")
-require("dotenv").config()
-const app = express();
-const pdf2img = require('pdf-img-convert');
-const fs = require("fs");
+const app = express()
+const pdf2img = require('pdf-img-convert')
+const fs = require("fs")
+const cors = require("cors")
 const { PythonShell } = require("python-shell")
+const mongoose = require('mongoose')
+const User = require("./schemas/User.js")
+require("dotenv").config()
+
+// TODO: Put URI into Azure secret
+mongoose.connect("mongodb+srv://jowiaoun:P1P35aMP2S2PhUOm@cluster0.juovemx.mongodb.net/")
 
 /* Template JSON request
 Request that needs authentication:
@@ -26,11 +32,14 @@ Body:
 }
 */
 //nonAuthPaths are for endpoints that do not require authentication. Put your endpoint here if needed
-const nonAuthPaths = ["/", "/profile", "/playground.html"]
+const nonAuthPaths = ["/", "/profile", "/playground.html", "/register"]
 
+// --- Middlewares
+app.use(cors({ origin: "*" }));
+app.use(express.json());
 app.use(function(req, res, next) {
     
-    //REMOVE ALL RES.HEADER before pushing to prod!
+    //TODO: REMOVE ALL RES.HEADER before pushing to prod!
     res.header("Access-Control-Allow-origin", "*")
     res.setHeader('Access-Control-Allow-Methods', "GET, POST")
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
@@ -78,29 +87,54 @@ app.use(function(req, res, next) {
     } else {
         next()
     }
-    
 })
+
 app.get('/', (req, res) => {
     res.send("Hello World!")
 })
-app.get('/playground.html', (req, res) => {
-    res.send(`<!DOCTYPE html>
-    <html lang="en" ng-app="APP">
-    <head>
-        <meta charset="UTF-8">
-        <title>angular file upload</title>
-    </head>
-    
-    <body>
-            <form method='post' action='/api/summarise' enctype="multipart/form-data">
-            <input type='file' name='fileUploaded'>
-            <input type='submit'>
-     </body>
-    </html>`)
-})
+
 app.get('/profile', (req, res) => {
     res.send("Profile page!")
 })
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+  
+    try {
+      // Find the user in the database
+      const user = await User.findOne({ username, password }).exec();
+  
+      if (!user) {
+        res.status(401).send('Invalid username or password');
+      } else {
+        res.send('Login successful');
+      }
+    } catch (error) {
+      console.error('Error finding user:', error);
+      res.status(500).send('Internal Server Error');
+    }
+});
+  
+// Signup endpoint
+app.post('/api/signup', async (req, res) => {
+
+    const { username, password } = req.body;
+    
+    try {
+      // Create a new user
+      const newUser = new User({ username, password });
+  
+      // Save the user to the database
+      await newUser.save();
+  
+      res.send('Signup successful');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).send('Internal Server Error');
+    }
+});
+  
 app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
     console.log(req.body.file)
@@ -127,9 +161,7 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
         
 
     })
-    
 
-    
     res.send({message: "Success!"})
     //Part 2: Summariser, assuming above ocr.py is done
     var output = "";
@@ -141,4 +173,4 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
     
 })
 
-app.listen(process.env.PORT || 8000);
+app.listen(process.env.PORT || 80);
