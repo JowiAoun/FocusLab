@@ -12,7 +12,7 @@ const User = require("./schemas/User.js")
 require("dotenv").config()
 
 // TODO: Put URI into Azure secret
-mongoose.connect("mongodb+srv://jowiaoun:P1P35aMP2S2PhUOm@cluster0.juovemx.mongodb.net/")
+
 const PDFDocument = require('pdf-lib').PDFDocument;
 const { ocrSpace } = require("ocr-space-api-wrapper")
 const { exec } = require('node:child_process');
@@ -191,7 +191,7 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
                           console.error(`exec error: ${error}`);
                           return;
                         } else {
-                            ocrSpace(newPath, {apiKey: "31df78a8b388957"}).then((result) => {
+                            ocrSpace(newPath, {apiKey: ""}).then((result) => {
                                 console.log(result)
                                 output += result.ParsedResults[0].ParsedText;
                                 recurse(x+1).then(p => resolve(p))
