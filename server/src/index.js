@@ -4,9 +4,9 @@ const ai = require("./summariser.js")
 const util = require("./util/util.js")
 require("dotenv").config()
 const app = express();
-const pdf2img = require('pdf-img-convert');
+//const pdf2img = require('pdf-img-convert');
 const fs = require("fs");
-const { PythonShell } = require("python-shell")
+//const { PythonShell } = require("python-shell")
 const PDFDocument = require('pdf-lib').PDFDocument;
 const { ocrSpace } = require("ocr-space-api-wrapper")
 const { exec } = require('node:child_process');
@@ -183,11 +183,18 @@ app.post('/api/summarise', express.json({limit: '50mb'}), (req, res) => {
                         console.log(summary)
                         res.send({summary: summary})
                     })
-                    .catch((e) => console.log(e))
+                    .catch((e) => {console.log(e) 
+                        res.statusCode(500).send({"error": "OCR software was unable to scan the pdf. Try uploading a smalled pdf (less than 20mb)"})
+                    })
                 
         })
-        .catch(e => console.log(e))
+        .catch((e) => {console.log(e) 
+            res.sendStatus(500)
+        })
         
+    })
+    .catch((e) => {console.log(e) 
+        res.sendStatus(500)
     })
 
 
